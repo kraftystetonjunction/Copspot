@@ -1,0 +1,73 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Police Spotter - Teton, Idaho</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        html, body, #map { height: 100%; margin: 0; padding: 0; }
+        
+/* Minified Leaflet CSS (basic for map render) */
+.leaflet-container {
+    height: 100%;
+    width: 100%;
+    position: relative;
+    outline: 0;
+}
+.leaflet-popup-content { font-size: 14px; }
+
+        #formContainer {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="formContainer">
+        <label for="note">Note:</label>
+        <input type="text" id="note" placeholder="e.g., speed trap" />
+        <button onclick="addMarker()">Report Police</button>
+    </div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([43.8876, -111.1046], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        const markers = [];
+
+        function addMarker() {
+            map.locate({setView: true, maxZoom: 16});
+            map.once('locationfound', function (e) {
+                const note = document.getElementById('note').value;
+                const timestamp = new Date().toLocaleTimeString();
+                const marker = L.marker(e.latlng)
+                    .addTo(map)
+                    .bindPopup(`<strong>Police Spotted</strong><br>${note}<br><em>${timestamp}</em>`);
+                marker.openPopup();
+                markers.push({ marker, created: Date.now() });
+            });
+        }
+
+        // Auto-remove markers after 2 hours
+        setInterval(() => {
+            const now = Date.now();
+            markers.forEach((obj, index) => {
+                if (now - obj.created > 2 * 60 * 60 * 1000) {
+                    map.removeLayer(obj.marker);
+                    markers.splice(index, 1);
+                }
+            });
+        }, 60000);
+    </script>
+</body>
+</html>
